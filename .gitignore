@@ -1,0 +1,8 @@
+.env
+venv/
+faiss_index/
+__pycache__/
+*.pdf
+*.docx
+*.txt
+*.csv
