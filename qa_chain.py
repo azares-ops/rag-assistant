@@ -9,10 +9,10 @@ def create_qa_chain():
     retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
 
     llm = HuggingFaceEndpoint(
-        repo_id="mistralai/Mistral-7B-Instruct-v0.2",
-        huggingfacehub_api_token=os.getenv("HUGGINGFACEHUB_API_TOKEN"),
-        max_new_tokens=512,
-        temperature=0.3
+    repo_id="HuggingFaceH4/zephyr-7b-beta",
+    huggingfacehub_api_token=os.getenv("HUGGINGFACEHUB_API_TOKEN"),
+    max_new_tokens=512,
+    temperature=0.3
     )
 
     prompt_template = """
