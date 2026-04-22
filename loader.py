@@ -16,6 +16,3 @@ def load_document(file_path):
         raise ValueError(f"Unsupported file type: {ext}")
 
     return loader.load()
-docs = load_document("book robo.docx")
-print(f"Loaded {len(docs)} page(s)")
-print(docs[0].page_content[:300])

@@ -1,0 +1,137 @@
+%% generateDataset_01.m
+%  Generates a synthetic dataset of '0' and '1' digits
+%  on 16x16 pixel grids with 5% noise and variation.
+%
+%  OUTPUT FILES:
+%    myDataX.mat  — feature matrix  (256 x 1000)  flattened 16x16 images
+%    myDataY.mat  — label vector    (1   x 1000)  1=zero, 2=one
+
+clear; clc; close all;
+rng(42);
+
+%% ========================================================================
+%  CONFIGURATION
+% =========================================================================
+
+IMG_SIZE    = 16;
+N_PER_CLASS = 500;
+NOISE_LEVEL = 0.05;   % 5% pixel flip probability
+
+%% ========================================================================
+%  SECTION 1 — TEMPLATES  (16x16)
+% =========================================================================
+
+% --- Digit '0' -----------------------------------------------------------
+T0 = [
+    0 0 0 0 1 1 1 1 1 1 1 0 0 0 0 0
+    0 0 0 1 1 1 1 1 1 1 1 1 0 0 0 0
+    0 0 1 1 1 0 0 0 0 0 1 1 1 0 0 0
+    0 1 1 1 0 0 0 0 0 0 0 1 1 1 0 0
+    0 1 1 0 0 0 0 0 0 0 0 0 1 1 0 0
+    1 1 1 0 0 0 0 0 0 0 0 0 1 1 1 0
+    1 1 0 0 0 0 0 0 0 0 0 0 0 1 1 0
+    1 1 0 0 0 0 0 0 0 0 0 0 0 1 1 0
+    1 1 0 0 0 0 0 0 0 0 0 0 0 1 1 0
+    1 1 0 0 0 0 0 0 0 0 0 0 0 1 1 0
+    1 1 1 0 0 0 0 0 0 0 0 0 1 1 1 0
+    0 1 1 0 0 0 0 0 0 0 0 0 1 1 0 0
+    0 1 1 1 0 0 0 0 0 0 0 1 1 1 0 0
+    0 0 1 1 1 0 0 0 0 0 1 1 1 0 0 0
+    0 0 0 1 1 1 1 1 1 1 1 1 0 0 0 0
+    0 0 0 0 1 1 1 1 1 1 1 0 0 0 0 0
+];
+
+% --- Digit '1' -----------------------------------------------------------
+T1 = [
+    0 0 0 0 0 1 1 1 0 0 0 0 0 0 0 0
+    0 0 0 0 1 1 1 1 0 0 0 0 0 0 0 0
+    0 0 0 1 1 1 1 1 0 0 0 0 0 0 0 0
+    0 0 1 1 0 1 1 1 0 0 0 0 0 0 0 0
+    0 0 0 0 0 1 1 1 0 0 0 0 0 0 0 0
+    0 0 0 0 0 1 1 1 0 0 0 0 0 0 0 0
+    0 0 0 0 0 1 1 1 0 0 0 0 0 0 0 0
+    0 0 0 0 0 1 1 1 0 0 0 0 0 0 0 0
+    0 0 0 0 0 1 1 1 0 0 0 0 0 0 0 0
+    0 0 0 0 0 1 1 1 0 0 0 0 0 0 0 0
+    0 0 0 0 0 1 1 1 0 0 0 0 0 0 0 0
+    0 0 0 0 0 1 1 1 0 0 0 0 0 0 0 0
+    0 0 0 0 0 1 1 1 0 0 0 0 0 0 0 0
+    0 0 0 0 0 1 1 1 0 0 0 0 0 0 0 0
+    0 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0
+    0 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0
+];
+
+%% ========================================================================
+%  SECTION 2 — GENERATE SAMPLES
+% =========================================================================
+
+d         = IMG_SIZE * IMG_SIZE;
+X         = zeros(d, N_PER_CLASS*2);
+Y         = zeros(1, N_PER_CLASS*2);
+templates = {T0, T1};
+
+for cls = 1:2
+    base = double(templates{cls});
+    for n = 1:N_PER_CLASS
+
+        img = base;
+
+        % Small random shift ±1
+        img = circshift(img, [randi([-1 1]), randi([-1 1])]);
+
+        % 5% salt-and-pepper noise
+        mask       = rand(IMG_SIZE) < NOISE_LEVEL;
+        img(mask)  = 1 - img(mask);
+        img        = double(img > 0.5);
+
+        col       = (cls-1)*N_PER_CLASS + n;
+        X(:, col) = img(:);
+        Y(1, col) = cls;
+    end
+end
+
+% Shuffle
+idx = randperm(N_PER_CLASS*2);
+X   = X(:, idx);
+Y   = Y(1, idx);
+
+%% ========================================================================
+%  SECTION 3 — SAVE
+% =========================================================================
+
+save('myDataX.mat', 'X');
+save('myDataY.mat', 'Y');
+fprintf('Saved: myDataX.mat  [%d x %d]\n', size(X,1), size(X,2));
+fprintf('Saved: myDataY.mat  [%d x %d]\n', size(Y,1), size(Y,2));
+
+%% ========================================================================
+%  SECTION 4 — VISUALISE
+% =========================================================================
+
+figure('Name','Synthetic 0/1 Dataset','Position',[100 100 1000 280]);
+sgtitle('Synthetic 0/1 Dataset — Sample Images (16×16)', 'FontSize',13);
+
+labels = {'Zero (0)', 'One (1)'};
+clsIdx = {find(Y==1), find(Y==2)};
+
+for cls = 1:2
+    for i = 1:10
+        subplot(2, 10, (cls-1)*10 + i);
+        img = reshape(X(:, clsIdx{cls}(i)), IMG_SIZE, IMG_SIZE);
+        imshow(img, [0 1]);
+        colormap(gray);
+        if i == 1
+            ylabel(labels{cls}, 'FontSize', 8, 'FontWeight', 'bold');
+        end
+    end
+end
+
+fprintf('\nClass distribution:\n');
+fprintf('  Class 1 (zero) : %d\n', sum(Y==1));
+fprintf('  Class 2 (one)  : %d\n', sum(Y==2));
+fprintf('\nAdd to S2WPILS_paper.m Section 1:\n');
+fprintf("  X_FILE         = 'myDataX.mat';\n");
+fprintf("  Y_FILE         = 'myDataY.mat';\n");
+fprintf('  HIDDEN_NEURONS = [128, 64, 32];\n');
+fprintf('  MAX_SUBNET     = 2;\n');
+fprintf('  FUSION_NEURONS = 256;\n');
