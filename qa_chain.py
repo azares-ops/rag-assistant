@@ -1,13 +1,19 @@
-from langchain_ollama import ChatOllama
+from langchain_huggingface import HuggingFaceEndpoint
 from langchain_classic.chains import RetrievalQA
 from langchain_core.prompts import PromptTemplate
 from vectorstore import load_vectorstore
+import os
 
 def create_qa_chain():
     vectorstore = load_vectorstore()
     retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
 
-    llm = ChatOllama(model="llama3.2")
+    llm = HuggingFaceEndpoint(
+        repo_id="mistralai/Mistral-7B-Instruct-v0.2",
+        huggingfacehub_api_token=os.getenv("HUGGINGFACEHUB_API_TOKEN"),
+        max_new_tokens=512,
+        temperature=0.3
+    )
 
     prompt_template = """
     You are a helpful assistant. Use the following context to answer the question.
@@ -35,15 +41,3 @@ def create_qa_chain():
     )
 
     return qa_chain
-
-chain = create_qa_chain()
-
-question = "what is this document about?"
-result = chain.invoke({"query": question})
-
-print("\nQuestion:", question)
-print("\nAnswer:", result["result"])
-print("\nSources used:")
-for doc in result["source_documents"]:
-    print("---")
-    print(doc.page_content[:200])
